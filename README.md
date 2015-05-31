@@ -22,3 +22,8 @@ How to Use
 2. `cp env.rb.sample env.rb` して中身を自分のAmazonS3にカスタム。
 3. `bundle install --standalone`
 4. `bundle exec ruby main.rb`
+
+Next Version
+============
+
+今のはシンプルにできているけれど、ちょっと MongoDB で遊んでみたいと考えている。
