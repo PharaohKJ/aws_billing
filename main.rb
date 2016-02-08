@@ -2,6 +2,7 @@
 require 'aws-sdk-core'
 require 'CSV'
 require_relative 'env'
+require 'yaml'
 
 Aws.config = CONFIG
 
@@ -9,35 +10,50 @@ Aws.config = CONFIG
 s3 = Aws::S3::Client.new
 buf = []
 p BUCKET
+# p s3.get_object(BUCKET)
+# puts YAML.dump(s3)
 s3.get_object(BUCKET) do |chunk|
+  # puts YAML.dump(chunk)
   chunk.split("\n").each do |l|
     buf << l
   end
 end
-
 csv = CSV.new(buf[1..-1].join("\n"), headers: true)
 
 pay = {}
 payment = {}
 
+def acceptable_line?(l)
+  return true if l['RecordType'] == 'PayerLineItem'
+  return true if l['RecordType'] == 'LinkedLineItem'
+  return false if l['TotalCost'].nil?
+  false
+end
+
+def payment_key(project, linked)
+  "#{linked}-#{project}"
+end
+
 csv.each do |l|
-  next unless l['InvoiceID'] == 'Estimated'
-  next unless l['RecordType'] == 'PayerLineItem'
-  next if l['TotalCost'].nil?
-  project = l['user:Project'] || 'none'
-  pay[project] = [] if pay[project].nil?
-  pay[project] << l
+  next unless acceptable_line?(l)
+  project = l['user:Project'].to_s == ''    ? 'none' : l['user:Project']
+  linked  = l['LinkedAccountId'].to_s == '' ? 'none' : l['LinkedAccountId']
+  pay[payment_key(project, linked)] = [] if pay[payment_key(project, linked)].nil?
+  pay[payment_key(project, linked)] << l
 end
 
 pay.each do | k, l |
+  l.sort! { |a, b| a['ProductName'] <=> b['ProductName']}
   l.each do |p|
-    puts "#{k} #{p['ProductName']} : #{p['TotalCost']}"
+    next if p['TotalCost'].to_f < 0.001
+    puts "Poject:#{k} #{p['ProductName']} : #{p['ItemDescription']} \n #{p['TotalCost']}"
     payment["#{k}"] = 0 if payment["#{k}"].nil?
     payment['total'] = 0  if payment['total'].nil?
     cost = p['TotalCost'].to_f
     payment["#{k}"] += cost
     payment['total'] += cost
   end
+  puts '---------'
 end
 
 payment.each do | k, l |
