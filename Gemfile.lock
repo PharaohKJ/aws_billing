@@ -13,9 +13,14 @@ GEM
     jmespath (1.0.2)
       multi_json (~> 1.0)
     multi_json (1.11.0)
+    text-table (1.2.4)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   aws-sdk
+  text-table
+
+BUNDLED WITH
+   1.11.2

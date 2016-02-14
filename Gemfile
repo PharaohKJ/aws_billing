@@ -1,5 +1,7 @@
 # A sample Gemfile
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-# gem "rails"
-gem "aws-sdk"
+# gem 'rails'
+gem 'aws-sdk'
+gem 'text-table'
+# gem 'colorize'
